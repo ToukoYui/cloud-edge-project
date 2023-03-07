@@ -51,7 +51,6 @@ public class K8sClient {
             "node-role.kubernetes.io/master"
     };
 
-
     public static boolean labelExist(String label){
         for (String item:
                 baseLabel ) {
@@ -61,4 +60,22 @@ public class K8sClient {
         }
         return false;
     }
+
+
+    static String[] baseNamespace = new String[]{
+            "kube-flannel",
+            "kube-node-lease",
+            "kube-public",
+            "kube-system"
+    };
+    public static boolean excludeNs(String label){
+        for (String item:
+                baseNamespace ) {
+            if (item.equals(label)){
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
