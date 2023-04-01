@@ -16,4 +16,5 @@ public class Pod {
     private String ip;
     private List<String> portMapper;
     private String createdTime;
+    private String namespace;
 }

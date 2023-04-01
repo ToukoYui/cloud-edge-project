@@ -1,6 +1,7 @@
 package com.dgut.controller;
 
 
+import com.dgut.model.dto.PodDto;
 import com.dgut.model.entity.Pod;
 import com.dgut.model.entity.R;
 import com.dgut.service.PodService;
@@ -13,6 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/dgut")
+@CrossOrigin
 public class PodController {
     @Autowired
     private PodService podService;
@@ -38,5 +40,21 @@ public class PodController {
     public R createPod(@RequestBody V1Pod pod) throws ApiException {
         podService.createPod(pod);
         return R.success("创建pod成功");
+    }
+
+
+    /**
+     * @Author: ToukoYui
+     * @Date: 2023/3/8 14:41
+     * @Description: 删除pod
+     **/
+    @DeleteMapping("/pod")
+    public R deletePod(@RequestBody List<PodDto> podDtoList) throws ApiException{
+        System.out.println("podDto = " + podDtoList);
+        boolean isDeleted = podService.deletePod(podDtoList);
+        if (!isDeleted){
+            return R.error(500,"删除pod失败");
+        }
+        return R.success("删除pod成功");
     }
 }

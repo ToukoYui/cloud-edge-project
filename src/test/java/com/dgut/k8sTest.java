@@ -7,6 +7,7 @@ import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.*;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.KubeConfig;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
 import java.io.FileReader;
@@ -14,6 +15,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 public class k8sTest {
     public static ApiClient apiClient;
     public static CoreV1Api coreV1Api;
@@ -23,6 +25,13 @@ public class k8sTest {
         // 读取配置文件验证连接
         apiClient = ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(new FileReader(kubeConfigPath))).build();
         coreV1Api = new CoreV1Api(apiClient);
+    }
+
+    @Test
+    public void getNamespace() throws IOException, ApiException {
+        initApiClient();
+        V1NamespaceList list = coreV1Api.listNamespace(null, null, null, null, null, null, null, null, null);
+        System.out.println("list = " + list);
     }
 
     @Test
@@ -74,8 +83,6 @@ public class k8sTest {
         containerList.add(v1Container2);
         v1PodSpec.setContainers(containerList);
 
-
-
         V1Pod v1Pod = new V1Pod();
         v1Pod.setMetadata(v1ObjectMeta);
         v1Pod.setSpec(v1PodSpec);
@@ -83,4 +90,21 @@ public class k8sTest {
         System.out.println(pod);
     }
 
+
+    @Test
+    public void deletePod() throws IOException, ApiException {
+        initApiClient();
+        try {
+            coreV1Api.deleteNamespacedPod("pod-imagepullpolicy", "dev-rin", null, null, null, null, null, null);
+        } catch (Exception e) {
+            if (e.getCause() instanceof IllegalStateException) {
+                IllegalStateException ise = (IllegalStateException) e.getCause();
+                if (ise.getMessage() != null && ise.getMessage().contains("Expected a string but was BEGIN_OBJECT")) {
+                    log.info("Catching exception because of issue https://github.com/kubernetes/kubernetes/issues/65121");
+                } else {
+                    throw e;
+                }
+            }
+        }
+    }
 }

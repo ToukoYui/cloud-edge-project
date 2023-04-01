@@ -9,7 +9,7 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import java.io.IOException;
 
 @Slf4j
-@SpringBootApplication(exclude= DataSourceAutoConfiguration.class)
+@SpringBootApplication
 public class DemoApplication {
 
     public static void main(String[] args) {
