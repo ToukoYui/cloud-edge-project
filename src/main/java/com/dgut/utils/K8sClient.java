@@ -17,6 +17,10 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
+/**
+ * @Author: ToukoYui
+ * @Description: 项目启动时初始化连接k8s客户端
+ **/
 public class K8sClient {
     public static ApiClient apiClient;
 

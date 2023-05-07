@@ -8,5 +8,5 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/dgut")
 @CrossOrigin
 public class ImageController {
-
+    
 }

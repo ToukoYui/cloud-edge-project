@@ -24,22 +24,23 @@ public class UserController {
      **/
     @PostMapping("user/login")
     public R<User> login(HttpServletRequest request, @RequestBody User user){
+        return R.success(user,"登录成功");
         //1.对用户输入的密码加密处理用来和数据库比对
-        String password = user.getPassword();
-//        password = DigestUtils.md5DigestAsHex(password.getBytes());
-        //2.根据用户名（唯一）查询数据库
-        LambdaQueryWrapper<User> lqw = new  LambdaQueryWrapper<>();
-        lqw.eq(User::getUsername,user.getUsername());
-        User result = userService.getOne(lqw);
-
-        //3.1 根据查不到该用户名
-        if (result == null){
-            return R.error(500,"该用户不存在！！！");
-        }
-        //3.2 查到该用户，但是密码不一致
-        if (!password.equals(user.getPassword())){
-            return R.error(500,"密码错误！！！");
-        }
+//        String password = user.getPassword();
+////        password = DigestUtils.md5DigestAsHex(password.getBytes());
+//        //2.根据用户名（唯一）查询数据库
+//        LambdaQueryWrapper<User> lqw = new  LambdaQueryWrapper<>();
+//        lqw.eq(User::getUsername,user.getUsername());
+//        User result = userService.getOne(lqw);
+//
+//        //3.1 根据查不到该用户名
+//        if (result == null){
+//            return R.error(500,"该用户不存在！！！");
+//        }
+//        //3.2 查到该用户，但是密码不一致
+//        if (!password.equals(user.getPassword())){
+//            return R.error(500,"密码错误！！！");
+//        }
 
         //4 查看员工状态是否被禁用
 //        if(1 != emp.getStatus()){
@@ -48,7 +49,7 @@ public class UserController {
 
         //成功,将用户id存入session中
 //        request.getSession().setAttribute("employee",emp.getId());
-        return R.success(user,"登录成功");
+//        return R.success(user,"登录成功");
     }
 
 

@@ -1,19 +1,25 @@
 package com.dgut;
 
+import com.dgut.model.entity.NodeResourceStatus;
 import com.dgut.utils.K8sClient;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.JSON;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.*;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.KubeConfig;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
 import org.junit.Test;
 
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 public class k8sTest {
@@ -106,5 +112,53 @@ public class k8sTest {
                 }
             }
         }
+    }
+
+    @Test
+    public void getPodLogs() throws IOException, ApiException {
+        initApiClient();
+        //容器名为null则查该命名空间下的Pod的所有日志
+        String s = coreV1Api.readNamespacedPodLog("cloud-iptables-manager-8q8fm", "dev-rin", null, null, null, null, null, null, null, null, null);
+        System.out.println("s = " + s);
+    }
+
+    @Test
+    public void getPersistVolume() throws IOException, ApiException {
+        initApiClient();
+        V1PersistentVolumeList volumeList = coreV1Api.listPersistentVolume(null, false, null, null, null, null, null, null, null);
+        System.out.println(volumeList);
+        V1Patch patch = new V1Patch("master");
+        V1PersistentVolume v1PersistentVolume = coreV1Api.patchPersistentVolume("pc-deployment-6696798b78-74hcp", patch, null, null, null, null);
+        System.out.println("v1PersistentVolume = " + v1PersistentVolume);
+    }
+
+    @Test
+    public void replacePodByVolume() throws IOException, ApiException {
+        initApiClient();
+        V1Pod v1Pod = coreV1Api.readNamespacedPod("pc-deployment-6696798b78-74hcp", "dev-rin", null, null, null);
+        JSON json = new JSON();
+        String serialize = json.serialize(v1Pod);
+        System.out.println(serialize);
+    }
+
+    @Test
+    public void getNodeDescribe() throws IOException, ApiException {
+
+
+    }
+    // -Djdk.tls.client.protocols=TLSv1.2
+    @Test
+    public void getNodeResourceStatus() throws ApiException, IOException {
+        initApiClient();
+        V1NodeList nodeList =
+                coreV1Api.listNode(null, null, null, null, null, null, null, null, null);
+        Map<String,NodeResourceStatus> map = new HashMap<>();
+        for (V1Node node :
+                nodeList.getItems()) {
+            String nodeName = node.getMetadata().getName();
+            V1NodeStatus status = node.getStatus();
+            map.put(nodeName,new NodeResourceStatus(status.getCapacity(),status.getAllocatable()));
+        }
+        System.out.println(map);
     }
 }
