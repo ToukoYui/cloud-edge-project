@@ -161,4 +161,9 @@ public class k8sTest {
         }
         System.out.println(map);
     }
+
+    @Test
+    public void get(){
+
+    }
 }

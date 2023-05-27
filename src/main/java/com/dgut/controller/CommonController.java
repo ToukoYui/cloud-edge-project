@@ -14,7 +14,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 
 @RestController
@@ -29,6 +32,8 @@ public class CommonController {
      **/
     @GetMapping("/namespace")
     public R<List<String>> getNamespace() throws ApiException {
+        Object o = new Object();
+        Class<?> aClass = o.getClass();
         ApiClient apiClient = K8sClient.getApiClient();
         CoreV1Api coreV1Api = new CoreV1Api(apiClient);
         List<String> result = new ArrayList<>();
