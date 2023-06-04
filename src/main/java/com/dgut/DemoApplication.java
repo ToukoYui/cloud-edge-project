@@ -8,6 +8,9 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 
 import java.io.IOException;
 
+/**
+ * -Djdk.tls.client.protocols=TLSv1.2
+ */
 @Slf4j
 @SpringBootApplication
 public class DemoApplication {

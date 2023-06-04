@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -32,4 +33,16 @@ public class PodLogServiceImpl extends ServiceImpl<PodLogMapper, PodLog> impleme
         String logString = coreV1Api.readNamespacedPodLog(podLogDto.getName(), podLogDto.getNamespace(), containName, null, null, null, null, null, null, null, null);
         return logString;
     }
+
+    @Override
+    public List<String> getContainerByNsandPod(String ns, String pod) throws ApiException {
+        CoreV1Api coreV1Api = new CoreV1Api(K8sClient.getApiClient());
+        V1Pod v1Pod = coreV1Api.readNamespacedPod(pod, ns, null, null, null);
+        List<V1Container> containers = v1Pod.getSpec().getContainers();
+        List<String> collect = containers.stream().map(V1Container::getName).collect(Collectors.toList());
+        System.out.println(collect);
+        return collect;
+    }
+
+
 }

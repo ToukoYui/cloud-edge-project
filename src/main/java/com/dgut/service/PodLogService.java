@@ -12,4 +12,6 @@ import java.util.List;
 public interface PodLogService extends IService<PodLog> {
 
     String getPodLogInfo(PodLogDto podLogDto) throws ApiException;
+
+    List<String> getContainerByNsandPod(String ns,String pod) throws ApiException;
 }

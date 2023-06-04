@@ -18,7 +18,6 @@ target/
 *.iws
 *.iml
 *.ipr
-resources/application.yml
 
 ### NetBeans ###
 /nbproject/private/
@@ -29,10 +28,7 @@ resources/application.yml
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
-resources/application.yml
 
 ### VS Code ###
 .vscode/
 
-/src/main/resources/application.yml
-/src/main/resources/adwwa.yml

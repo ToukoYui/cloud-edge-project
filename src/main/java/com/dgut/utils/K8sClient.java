@@ -25,7 +25,8 @@ public class K8sClient {
     public static ApiClient apiClient;
 
     public static void initApiClient() throws IOException {
-        String kubeConfigPath = "src\\main\\resources\\config";
+//        String kubeConfigPath = "src\\main\\resources\\config";
+        String kubeConfigPath = "E:\\k8s-project\\src\\main\\resources\\config";
         // 读取配置文件验证连接
         apiClient = ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(new FileReader(kubeConfigPath))).build();
 

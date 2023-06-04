@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class k8sTest {
@@ -163,7 +164,15 @@ public class k8sTest {
     }
 
     @Test
-    public void get(){
+    public void getContainerByPod() throws IOException, ApiException {
+        initApiClient();
+        V1Pod v1Pod = coreV1Api.readNamespacedPod("nginx-pod-697786dc74-hptcm", "default", null, null, null);
+        List<V1Container> containers = v1Pod.getSpec().getContainers();
+        for (V1Container t :
+                containers) {
 
+        }
+        List<String> collect = containers.stream().map(V1Container::getName).collect(Collectors.toList());
+        System.out.println(collect);
     }
 }
