@@ -52,6 +52,7 @@ public class NodeServiceImpl extends ServiceImpl <NodeMapper, Node> implements N
         return resultList;
     }
 
+    // 查看node的cpu、内存信息
     public Map<String,NodeResourceStatus> getNodeResourceStatus() throws ApiException {
         ApiClient apiClient = K8sClient.getApiClient();
         CoreV1Api coreV1Api = new CoreV1Api(apiClient);

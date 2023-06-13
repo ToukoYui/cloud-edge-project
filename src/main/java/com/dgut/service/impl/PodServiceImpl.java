@@ -1,34 +1,33 @@
 package com.dgut.service.impl;
 
-import ch.qos.logback.classic.spi.EventArgUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.dgut.mapper.NodeMapper;
 import com.dgut.mapper.PodMapper;
 import com.dgut.model.dto.PodDto;
-import com.dgut.model.entity.Node;
+import com.dgut.model.entity.NodeResourceStatus;
 import com.dgut.model.entity.Pod;
 import com.dgut.service.NodeService;
 import com.dgut.service.PodService;
 import com.dgut.utils.K8sClient;
-import io.kubernetes.client.openapi.ApiClient;
+import com.fasterxml.jackson.databind.util.BeanUtil;
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.StringUtil;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 public class PodServiceImpl extends ServiceImpl<PodMapper, Pod> implements PodService {
-
+    @Autowired
+    private NodeService nodeService;
 
     @Override
     public List<Pod> getPods(String ns) throws ApiException {
@@ -75,7 +74,9 @@ public class PodServiceImpl extends ServiceImpl<PodMapper, Pod> implements PodSe
             pod.setImage(images);
             pod.setPortMapper(portMapperStrList);
             pod.setIp(status.getPodIP());
-            pod.setCreatedTime(status.getStartTime().toString("yyyy-MM-dd HH:mm:ss"));
+            if (status.getStartTime() !=null){
+                pod.setCreatedTime(status.getStartTime().toString("yyyy-MM-dd HH:mm:ss"));
+            }
             resultList.add(pod);
         }
 
@@ -85,8 +86,47 @@ public class PodServiceImpl extends ServiceImpl<PodMapper, Pod> implements PodSe
     @Override
     public void createPod(V1Pod pod) throws ApiException {
         CoreV1Api coreV1Api = new CoreV1Api(K8sClient.getApiClient());
+        // 节点调度
+        // 获取节点状态信息
+        Map<String, NodeResourceStatus> nodeResourceStatusMap = nodeService.getNodeResourceStatus();
+        // 得到每个节点的状态权重
+        Map<String,Double> scoreMap = getNodeStatusDetail(nodeResourceStatusMap);
+        // 排序，拿到权重最小的节点名
+        scoreMap.entrySet().stream().sorted(Map.Entry.comparingByValue());
+        // 将最小的节点封装成一个list
+        Double temp = Double.valueOf(0);
+        List<String> list = new ArrayList<>();
+        boolean flag = false;
+        for (Map.Entry<String, Double> entry :
+                scoreMap.entrySet()) {
+            if (!flag){
+                list.add(entry.getKey());
+                temp = entry.getValue();
+                flag = true;
+            }else{
+                // 如果权重相等需要随机选择节点
+                if (entry.getValue().equals(temp)){
+                    list.add(entry.getKey());
+                }
+            }
+        }
+        // 随机获取list中的节点,设置节点名
+        int size = list.size();
+        String resultNodeName = "";
+        if (size==1){
+            resultNodeName = list.get(0);
+            pod.getSpec().setNodeName(resultNodeName);
+        }else if (size >1){
+            Random random = new Random(System.currentTimeMillis());
+            int index = random.nextInt(size);
+            resultNodeName = list.get(index);
+            pod.getSpec().setNodeName(resultNodeName);
+        }
+        log.info("pod调度到节点========>"+resultNodeName);
         String ns = pod.getMetadata().getNamespace();
-        V1Pod result = coreV1Api.createNamespacedPod(ns, pod, null, null, null);
+        V1Pod result =
+                coreV1Api.createNamespacedPod(ns, pod, null, null, null);
+        // todo 如果出现创建失败情况需要进行后续处理
         System.out.println(result);
     }
 
@@ -122,4 +162,31 @@ public class PodServiceImpl extends ServiceImpl<PodMapper, Pod> implements PodSe
         return portMapper;
     }
 
+    // 获取封装节点状态信息
+    public Map<String,Double> getNodeStatusDetail(Map<String, NodeResourceStatus> nodeResourceStatusMap){
+        Map<String,Double> scoreFromNodeMap = new HashMap<>();
+        for (Map.Entry<String, NodeResourceStatus> entry:
+                nodeResourceStatusMap.entrySet()) {
+            String nodeName = entry.getKey();
+            NodeResourceStatus status = entry.getValue();
+            Map<String, Quantity> allocatable = status.getAllocatable();
+            Map<String, Quantity> capacity = status.getCapacity();
+            // 可分配的cpu数量,内存,pod数
+            BigDecimal allocatableCpu = allocatable.get("cpu").getNumber();
+            BigDecimal allocatableMemory = allocatable.get("memory").getNumber();
+            BigDecimal allocatablePods = allocatable.get("pods").getNumber();
+            // 总的cpu数量,内存,pod数
+            BigDecimal capacityCpu = capacity.get("cpu").getNumber();
+            BigDecimal capacityMemory = capacity.get("memory").getNumber();
+            BigDecimal capacityPods = capacity.get("pods").getNumber();
+            //使用占比
+            Double cpuPercent = allocatableCpu.divide(capacityCpu, 4, RoundingMode.DOWN).doubleValue();
+            Double memoryPercent = allocatableMemory.divide(capacityMemory, 4, RoundingMode.DOWN).doubleValue();
+            Double podsPercent = allocatablePods.divide(capacityPods, 4, RoundingMode.DOWN).doubleValue();
+            // 得到权重
+            Double score = memoryPercent * 0.6 + cpuPercent * 0.3 + podsPercent * 0.1;
+            scoreFromNodeMap.put(nodeName,score);
+        }
+            return scoreFromNodeMap;
+    }
 }
